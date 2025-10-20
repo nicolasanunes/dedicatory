@@ -89,11 +89,50 @@ git push origin main
 - **Renovação**: Sistema automático de tokens OAuth
 - **Logs**: Builds privados no GitHub Actions
 
+## � **Correções TypeScript Aplicadas**
+
+### **Erros Corrigidos:**
+1. **❌ 'isTokenExpired' e 'getDebugInfo' não utilizados**
+   - ✅ Removido `isTokenExpired` dos imports
+   - ✅ Criado função `showDebugInfo()` para usar no template
+
+2. **❌ '$event.target' tipagem incorreta**
+   - ✅ Corrigido: `@input="(event: Event) => setVolume(parseFloat((event.target as HTMLInputElement).value))"`
+
+3. **❌ import.meta.env não reconhecido**
+   - ✅ Criado `src/vite-env.d.ts` com definições de tipos
+   - ✅ Atualizado `tsconfig.app.json` para incluir arquivos `.d.ts`
+
+4. **❌ import.meta.env no template Vue**
+   - ✅ Criado computed property `isDev` para usar no template
+   - ✅ Substituído `v-if="import.meta.env.DEV"` por `v-if="isDev"`
+   - ✅ Atualizado função `showDebugInfo()` para usar `isDev.value`
+
+### **Arquivos Alterados:**
+- `src/App.vue` - Correções de tipagem e imports
+- `src/vite-env.d.ts` - Novo arquivo de tipos Vite
+- `tsconfig.app.json` - Incluir arquivos de definição
+
+### **Principais Correções no Template:**
+```vue
+<!-- ANTES (causava erro de build) -->
+<div v-if="import.meta.env.DEV">
+
+<!-- DEPOIS (funciona corretamente) -->
+<div v-if="isDev">
+```
+
+### **Computed Property Adicionada:**
+```typescript
+// No script setup
+const isDev = computed(() => import.meta.env.DEV)
+```
+
 ## 📋 **Checklist Final**
 
-- [ ] Configurar Source = "GitHub Actions" no GitHub Pages
-- [ ] Reinstalar `npm install` (remover gh-pages)
-- [ ] Fazer commit e push das alterações
+- [x] ✅ Corrigir erros TypeScript
+- [ ] Configurar Source = "GitHub Actions" no GitHub Pages  
+- [ ] Fazer commit e push das correções
 - [ ] Verificar deploy em Actions
 - [ ] Testar site e Spotify
 - [ ] Música romântica tocando sem interrupções! 💕

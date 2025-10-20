@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useSpotifyAuth } from './composables/useSpotifyAuth'
+
+// Verificar se está em desenvolvimento (computed para uso no template)
+const isDev = computed(() => import.meta.env.DEV)
 
 // Data de referência (19/11/2021 às 23:23)
 const referenceDate = new Date('2021-11-19T23:23:00')
@@ -90,15 +93,13 @@ const stopAutoPlay = () => {
 // ========== SISTEMA DE AUTENTICAÇÃO COM RENOVAÇÃO AUTOMÁTICA ==========
 const {
   isAuthenticated,
-  isTokenExpired,
   minutesUntilExpiry,
   isRefreshing,
   lastRefreshError,
   initializeTokens,
   getValidToken,
   startAutoRefresh,
-  spotifyApiRequest,
-  getDebugInfo
+  spotifyApiRequest
 } = useSpotifyAuth()
 
 // Inicializar tokens ao carregar
@@ -315,6 +316,16 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 
 // ========== FIM SPOTIFY ==========
 
+// Função para debug (apenas em desenvolvimento)
+const showDebugInfo = () => {
+  if (isDev.value) {
+    const { getDebugInfo } = useSpotifyAuth()
+    console.group('🐛 Debug Info - Sistema de Renovação Spotify')
+    console.log(getDebugInfo())
+    console.groupEnd()
+  }
+}
+
 // Função para calcular a diferença de tempo
 const calculateTimeDifference = () => {
   const now = new Date()
@@ -457,11 +468,11 @@ onUnmounted(() => {
             </span>
           </div>
           <!-- Debug info (só em desenvolvimento) -->
-          <!-- <div v-if="import.meta.env.DEV" class="debug-info">
-            <button @click="console.log(getDebugInfo())" class="debug-btn">
+          <div v-if="isDev" class="debug-info">
+            <button @click="showDebugInfo()" class="debug-btn">
               🐛 Debug Info
             </button>
-          </div> -->
+          </div>
         </div>
 
         <!-- Informações da música -->
@@ -531,7 +542,7 @@ onUnmounted(() => {
             max="1" 
             step="0.1" 
             :value="volume"
-            @input="setVolume(parseFloat($event.target.value))"
+            @input="(event: Event) => setVolume(parseFloat((event.target as HTMLInputElement).value))"
             class="volume-slider"
           />
           <span class="volume-text">{{ Math.round(volume * 100) }}%</span>
