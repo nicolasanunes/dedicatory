@@ -7,7 +7,7 @@ export default defineConfig({
     host: '192.168.10.19'
   },
   plugins: [vue()],
-  base: process.env.NODE_ENV === 'production' ? '/dedicatory/' : '/',
+  base: '/dedicatory/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets'
