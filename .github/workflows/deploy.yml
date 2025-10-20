@@ -38,7 +38,8 @@ jobs:
           echo "CLIENT_ID disponível: ${{ secrets.VITE_SPOTIFY_CLIENT_ID != '' }}"
           echo "ACCESS_TOKEN disponível: ${{ secrets.VITE_SPOTIFY_ACCESS_TOKEN != '' }}"
           echo "REFRESH_TOKEN disponível: ${{ secrets.VITE_SPOTIFY_REFRESH_TOKEN != '' }}"
-          echo "Primeiros 20 chars do ACCESS_TOKEN: ${{ substr(secrets.VITE_SPOTIFY_ACCESS_TOKEN, 0, 20) }}"
+          echo "CLIENT_SECRET disponível: ${{ secrets.VITE_SPOTIFY_CLIENT_SECRET != '' }}"
+          echo "TRACK_URI disponível: ${{ secrets.VITE_SPOTIFY_TRACK_URI != '' }}"
         
       - name: Build with Spotify credentials
         run: npm run build
