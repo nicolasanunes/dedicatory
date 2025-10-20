@@ -108,6 +108,12 @@ git push origin main
    - ✅ Substituído `v-if="import.meta.env.DEV"` por `v-if="isDev"`
    - ✅ Atualizado função `showDebugInfo()` para usar `isDev.value`
 
+5. **❌ setInterval retorna Timeout, não number**
+   - ✅ Corrigido `let intervalId: NodeJS.Timeout | null = null`
+   - ✅ Corrigido `let slideInterval: NodeJS.Timeout | null = null`
+   - ✅ Adicionado `/// <reference types="node" />` no vite-env.d.ts
+   - ✅ Adicionado `"types": ["vite/client", "node"]` no tsconfig.app.json
+
 ### **Arquivos Alterados:**
 - `src/App.vue` - Correções de tipagem e imports
 - `src/vite-env.d.ts` - Novo arquivo de tipos Vite

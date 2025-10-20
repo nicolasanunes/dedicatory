@@ -16,12 +16,12 @@ const hours = ref(0)
 const minutes = ref(0)
 const seconds = ref(0)
 
-let intervalId: number | null = null
+let intervalId: NodeJS.Timeout | null = null
 
 // Estados do slideshow
 const currentSlide = ref(0)
 const isAutoPlaying = ref(true)
-let slideInterval: number | null = null
+let slideInterval: NodeJS.Timeout | null = null
 
 // Array de fotos (você pode substituir por suas próprias imagens)
 const photos = ref([
