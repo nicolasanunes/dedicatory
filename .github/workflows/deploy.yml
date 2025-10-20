@@ -33,22 +33,48 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: 🔍 Debug - Verificar se secrets estão disponíveis
+      - name: 🔍 Debug - Verificar secrets e variáveis de ambiente
         run: |
+          echo "🔍 Verificando secrets disponíveis:"
           echo "CLIENT_ID disponível: ${{ secrets.VITE_SPOTIFY_CLIENT_ID != '' }}"
           echo "ACCESS_TOKEN disponível: ${{ secrets.VITE_SPOTIFY_ACCESS_TOKEN != '' }}"
           echo "REFRESH_TOKEN disponível: ${{ secrets.VITE_SPOTIFY_REFRESH_TOKEN != '' }}"
           echo "CLIENT_SECRET disponível: ${{ secrets.VITE_SPOTIFY_CLIENT_SECRET != '' }}"
           echo "TRACK_URI disponível: ${{ secrets.VITE_SPOTIFY_TRACK_URI != '' }}"
-        
-      - name: Build with Spotify credentials
-        run: npm run build
+          echo ""
+          echo "🔍 Verificando se variáveis estão sendo passadas para o ambiente:"
+          echo "VITE_SPOTIFY_CLIENT_ID length: ${#VITE_SPOTIFY_CLIENT_ID}"
+          echo "VITE_SPOTIFY_ACCESS_TOKEN length: ${#VITE_SPOTIFY_ACCESS_TOKEN}"
+          echo "VITE_SPOTIFY_REFRESH_TOKEN length: ${#VITE_SPOTIFY_REFRESH_TOKEN}"
         env:
           VITE_SPOTIFY_CLIENT_ID: ${{ secrets.VITE_SPOTIFY_CLIENT_ID }}
           VITE_SPOTIFY_CLIENT_SECRET: ${{ secrets.VITE_SPOTIFY_CLIENT_SECRET }}
           VITE_SPOTIFY_ACCESS_TOKEN: ${{ secrets.VITE_SPOTIFY_ACCESS_TOKEN }}
           VITE_SPOTIFY_REFRESH_TOKEN: ${{ secrets.VITE_SPOTIFY_REFRESH_TOKEN }}
           VITE_SPOTIFY_TRACK_URI: ${{ secrets.VITE_SPOTIFY_TRACK_URI }}
+        
+      - name: Build with Spotify credentials
+        run: |
+          echo "🚀 Iniciando build com credenciais Spotify..."
+          npm run build
+          echo "✅ Build concluído"
+        env:
+          VITE_SPOTIFY_CLIENT_ID: ${{ secrets.VITE_SPOTIFY_CLIENT_ID }}
+          VITE_SPOTIFY_CLIENT_SECRET: ${{ secrets.VITE_SPOTIFY_CLIENT_SECRET }}
+          VITE_SPOTIFY_ACCESS_TOKEN: ${{ secrets.VITE_SPOTIFY_ACCESS_TOKEN }}
+          VITE_SPOTIFY_REFRESH_TOKEN: ${{ secrets.VITE_SPOTIFY_REFRESH_TOKEN }}
+          VITE_SPOTIFY_TRACK_URI: ${{ secrets.VITE_SPOTIFY_TRACK_URI }}
+          
+      - name: 🔍 Debug - Verificar se as variáveis foram injetadas no build
+        run: |
+          echo "🔍 Verificando arquivos gerados:"
+          ls -la dist/
+          echo ""
+          echo "🔍 Procurando por referências às variáveis nos arquivos JS:"
+          find dist/ -name "*.js" -exec grep -l "SPOTIFY" {} \; || echo "Nenhum arquivo JS com SPOTIFY encontrado"
+          echo ""
+          echo "🔍 Verificando se as variáveis estão no bundle (primeiros arquivos):"
+          find dist/ -name "*.js" -exec grep -o "VITE_SPOTIFY_[A-Z_]*" {} \; | head -10 || echo "Variáveis VITE_SPOTIFY não encontradas no bundle"
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
