@@ -1,0 +1,24 @@
+/* ========== BACKGROUND GLOBAL ========== */
+body {
+  margin: 0;
+  padding: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2)),
+    url('/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* Responsividade para background */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll; /* Melhor performance em mobile */
+  }
+}

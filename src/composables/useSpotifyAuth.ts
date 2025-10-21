@@ -28,6 +28,13 @@ export const useSpotifyAuth = () => {
   const initialToken = import.meta.env.VITE_SPOTIFY_ACCESS_TOKEN
   const initialRefreshToken = import.meta.env.VITE_SPOTIFY_REFRESH_TOKEN
 
+  console.log('🔑 Configurações do Spotify carregadas:', {
+    clientId,
+    clientSecret,
+    initialToken,
+    initialRefreshToken
+  })
+
   // Computed properties
   const isAuthenticated = computed(() => !!accessToken.value)
   const isTokenExpired = computed(() => Date.now() >= expiresAt.value)

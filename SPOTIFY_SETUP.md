@@ -12,11 +12,22 @@
 4. Preencha os dados:
    - **App name**: `Nossa Música Player`
    - **App description**: `Player romântico para nossa música especial`
-   - **Website**: `http://localhost:5173`
-   - **Redirect URIs**: `http://localhost:5173`
+   - **Website**: `https://localhost:5173` ⚠️ **IMPORTANTE: Use HTTPS**
+   - **Redirect URIs**: 
+     - `https://localhost:5173` ⚠️ **IMPORTANTE: Use HTTPS**
+     - `http://localhost:5173` (manter como fallback)
 5. Marque **"Web Playback SDK"** nas APIs utilizadas
 6. Aceite os termos e clique em **"Save"**
 7. **Copie o Client ID** (você precisará dele)
+
+## ⚠️ IMPORTANTE: Configuração HTTPS
+
+### Se já tem um app criado:
+1. Acesse seu app no dashboard
+2. Clique em **"Edit Settings"**
+3. **Website**: Alterar para `https://localhost:5173`
+4. **Redirect URIs**: Adicionar `https://localhost:5173`
+5. Salvar alterações
 
 ## Passo 2: Obter Access Token
 
