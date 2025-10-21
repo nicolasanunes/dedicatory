@@ -103,7 +103,7 @@ curl -X POST "https://accounts.spotify.com/api/token" \
 4. Extraia o ID: `4uLU6hMCjMI75M1A2tKUQC`
 5. No arquivo `.env.local`, configure:
    ```env
-   VITE_SPOTIFY_TRACK_URI=spotify:track:4uLU6hMCjMI75M1A2tKUQC
+   VITE_SPOTIFY_TRACK_URI=spotify:track:2o2xhyri4aJUtgMGkf5P0J
    ```
    ```
 
