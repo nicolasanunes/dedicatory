@@ -613,7 +613,6 @@ onUnmounted(() => {
                 @input="(event: Event) => setVolume(parseFloat((event.target as HTMLInputElement).value))"
                 class="volume-slider"
               />
-              <span class="volume-text">{{ Math.round(volume * 100) }}%</span>
             </div>
           </div>
           <!-- Controles de reprodução -->
