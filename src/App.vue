@@ -110,12 +110,16 @@ const deviceId = ref('')
 const position = ref(0)
 const duration = ref(0)
 const volume = ref(0.3)
-const autoPlayAttempts = ref(0)
-const maxAutoPlayAttempts = 3
-const isAttemptingAutoPlay = ref(false)
+const isSafariMobile = ref(false)
+const hasUserInteracted = ref(false)
+let positionUpdateInterval: NodeJS.Timeout | null = null
 
 // Track URI da música que você quer tocar (configurável via .env.local)
 const trackUri = import.meta.env.VITE_SPOTIFY_TRACK_URI || 'spotify:track:2o2xhyri4aJUtgMGkf5P0J' // Fallback para Lisboa - Anavitoria, Lenine
+
+
+
+
 
 // Declarar tipos globais
 declare global {
@@ -125,25 +129,84 @@ declare global {
   }
 }
 
+// Função para atualizar a posição da música em tempo real
+const startPositionUpdate = () => {
+  if (positionUpdateInterval) {
+    clearInterval(positionUpdateInterval)
+  }
+  
+  positionUpdateInterval = setInterval(async () => {
+    if (spotifyPlayer.value && isPlaying.value) {
+      try {
+        const state = await spotifyPlayer.value.getCurrentState()
+        if (state) {
+          position.value = state.position
+        }
+      } catch (error) {
+        // Silently handle errors to avoid spam
+      }
+    }
+  }, 1000) // Atualiza a cada segundo
+}
+
+const stopPositionUpdate = () => {
+  if (positionUpdateInterval) {
+    clearInterval(positionUpdateInterval)
+    positionUpdateInterval = null
+  }
+}
+
+// Detectar Safari mobile
+const detectSafariMobile = () => {
+  const ua = navigator.userAgent
+  const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua)
+  const isMobile = /Mobile|Android|iPhone|iPad/.test(ua)
+  return isSafari && isMobile
+}
+
 // Inicializar Spotify Web Playback SDK
-const initSpotifyPlayer = () => {
+const initSpotifyPlayer = async () => {
+  console.log('🎵 Iniciando Spotify Player...')
+  
+  // Detectar Safari mobile
+  isSafariMobile.value = detectSafariMobile()
+  console.log('🍎 Safari mobile detectado:', isSafariMobile.value)
+  
   if (!window.Spotify) {
-    console.error('Spotify SDK não carregado')
+    console.error('❌ Spotify SDK não carregado')
     return
   }
 
-  const player = new window.Spotify.Player({
-    name: 'Nossa Música Player ❤️',
-    getOAuthToken: async (cb: (token: string) => void) => {
-      const token = await getValidToken()
-      if (token) {
-        cb(token)
-      } else {
-        console.error('❌ Não foi possível obter token válido')
-      }
-    },
-    volume: volume.value
-  })
+
+
+  // Verificar se o navegador suporta Web Playback SDK
+  if (!window.Spotify.Player) {
+    console.error('❌ Web Playback SDK não suportado neste navegador')
+    return
+  }
+
+  console.log('✅ Criando player Spotify...')
+  
+  try {
+    const player = new window.Spotify.Player({
+      name: 'Nossa Música Player ❤️',
+      getOAuthToken: async (cb: (token: string) => void) => {
+        try {
+          const token = await getValidToken()
+          if (token) {
+            console.log('✅ Token obtido para player')
+            cb(token)
+          } else {
+            console.error('❌ Não foi possível obter token válido')
+          }
+        } catch (error) {
+          console.error('❌ Erro ao obter token:', error)
+        }
+      },
+      volume: volume.value
+    })
+    
+    console.log('✅ Player Spotify criado com sucesso')
 
   // Event Listeners
   player.addListener('ready', ({ device_id }: { device_id: string }) => {
@@ -152,10 +215,10 @@ const initSpotifyPlayer = () => {
     isSpotifyReady.value = true
     isSpotifyConnected.value = true
     
-    // Iniciar música automaticamente quando o player estiver pronto
+    // Carregar música automaticamente mas pausada
     setTimeout(() => {
-      attemptAutoPlay()
-    }, 1500) // Delay um pouco maior para garantir inicialização completa
+      loadMusicPaused()
+    }, 1)
   })
 
   player.addListener('not_ready', ({ device_id }: { device_id: string }) => {
@@ -170,6 +233,7 @@ const initSpotifyPlayer = () => {
       isPaused.value = false
       position.value = 0
       duration.value = 0
+      stopPositionUpdate()
       return
     }
 
@@ -178,6 +242,13 @@ const initSpotifyPlayer = () => {
     isPaused.value = state.paused
     position.value = state.position
     duration.value = state.duration
+
+    // Iniciar ou parar atualização da posição baseado no estado
+    if (isPlaying.value) {
+      startPositionUpdate()
+    } else {
+      stopPositionUpdate()
+    }
 
     console.log('Estado mudou:', {
       track: currentTrack.value?.name,
@@ -188,44 +259,47 @@ const initSpotifyPlayer = () => {
 
   // Error handling
   player.addListener('initialization_error', ({ message }: { message: string }) => {
-    console.error('Erro de inicialização:', message)
+    console.error('❌ Erro de inicialização:', message)
   })
 
   player.addListener('authentication_error', ({ message }: { message: string }) => {
-    console.error('Erro de autenticação:', message)
+    console.error('❌ Erro de autenticação:', message)
+    getValidToken().then(token => console.error('🔑 Token disponível:', !!token))
   })
 
   player.addListener('account_error', ({ message }: { message: string }) => {
-    console.error('Erro de conta:', message)
+    console.error('❌ Erro de conta:', message)
   })
 
   player.addListener('playback_error', ({ message }: { message: string }) => {
-    console.error('Erro de reprodução:', message)
+    console.error('❌ Erro de reprodução:', message)
   })
 
   // Conectar o player
+  console.log('🔌 Tentando conectar ao Spotify...')
   player.connect().then((success: boolean) => {
+    console.log('🔌 Resultado da conexão:', success)
     if (success) {
-      console.log('Conectado ao Spotify Web Playback SDK!')
+      console.log('✅ Conectado ao Spotify Web Playback SDK!')
       spotifyPlayer.value = player
     } else {
-      console.error('Falha ao conectar com o Spotify')
+      console.error('❌ Falha ao conectar com o Spotify')
+      console.error(' User Agent:', navigator.userAgent)
     }
+  }).catch((error: any) => {
+    console.error('❌ Erro na conexão do Spotify:', error)
   })
+  
+  } catch (error) {
+    console.error('❌ Erro ao criar player Spotify:', error)
+  }
 }
 
-// Funções de controle do player (com renovação automática)
-const playMusic = async (isAutoPlay = false) => {
+// Função para carregar música pausada
+const loadMusicPaused = async () => {
   if (!deviceId.value) {
-    console.warn('⚠️ Device ID não disponível')
-    if (isAutoPlay && autoPlayAttempts.value < maxAutoPlayAttempts) {
-      setTimeout(() => attemptAutoPlay(), 2000)
-    }
+    console.warn('⚠️ Device ID não disponível para carregar música')
     return
-  }
-
-  if (isAutoPlay) {
-    isAttemptingAutoPlay.value = true
   }
 
   try {
@@ -244,43 +318,81 @@ const playMusic = async (isAutoPlay = false) => {
       throw new Error(`Erro HTTP: ${response.status}`)
     }
 
-    console.log('🎵 Música iniciada!' + (isAutoPlay ? ' (Auto-play)' : ''))
-    if (isAutoPlay) {
-      isAttemptingAutoPlay.value = false
-      autoPlayAttempts.value = 0 // Reset counter on success
+    console.log('🎵 Música carregada!')
+    
+    // Pausar imediatamente após carregar
+    setTimeout(() => {
+      pauseMusic()
+    }, 500)
+  } catch (error) {
+    console.error('❌ Erro ao carregar música:', error)
+  }
+}
+
+// Funções de controle do player (com renovação automática)
+const playMusic = async () => {
+  if (!deviceId.value) {
+    console.warn('⚠️ Device ID não disponível')
+    return
+  }
+
+  // Marcar que o usuário interagiu (importante para Safari)
+  hasUserInteracted.value = true
+
+  try {
+    // Para Safari mobile, aguardar um pouco antes de executar
+    if (isSafariMobile.value) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    // Se já há uma música carregada e pausada, usar resume
+    if (currentTrack.value && isPaused.value) {
+      const response = await spotifyApiRequest(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`)
+      }
+
+      console.log('🎵 Música retomada!')
+    } else {
+      // Iniciar música do começo se não há música carregada
+      const response = await spotifyApiRequest(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          uris: [trackUri],
+          position_ms: 0
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`)
+      }
+
+      console.log('🎵 Música iniciada!')
+    }
+
+    // Para Safari mobile, forçar o estado de playing
+    if (isSafariMobile.value && spotifyPlayer.value) {
+      setTimeout(() => {
+        spotifyPlayer.value.resume().catch((error: any) => {
+          console.log('Resume não necessário:', error)
+        })
+      }, 200)
     }
   } catch (error) {
     console.error('❌ Erro ao iniciar música:', error)
-    
-    if (isAutoPlay && autoPlayAttempts.value < maxAutoPlayAttempts) {
-      setTimeout(() => attemptAutoPlay(), 3000)
-    } else {
-      isAttemptingAutoPlay.value = false
-    }
   }
 }
 
-// Função específica para tentativas de auto-play
-const attemptAutoPlay = () => {
-  autoPlayAttempts.value++
-  console.log(`🔄 Tentativa ${autoPlayAttempts.value}/${maxAutoPlayAttempts} de auto-play...`)
-  playMusic(true)
-}
 
-// Adicionar listener para primeira interação do usuário
-const handleFirstInteraction = () => {
-  if (autoPlayAttempts.value >= maxAutoPlayAttempts && !currentTrack.value && isSpotifyReady.value) {
-    console.log('👆 Primeira interação detectada, tentando tocar música...')
-    playMusic(false)
-    removeInteractionListeners()
-  }
-}
-
-const removeInteractionListeners = () => {
-  document.removeEventListener('click', handleFirstInteraction)
-  document.removeEventListener('keydown', handleFirstInteraction)
-  document.removeEventListener('touchstart', handleFirstInteraction)
-}
 
 const pauseMusic = async () => {
   if (!deviceId.value) {
@@ -299,6 +411,11 @@ const pauseMusic = async () => {
 }
 
 const togglePlayback = () => {
+  // Garantir que houve interação do usuário para Safari
+  if (isSafariMobile.value && !hasUserInteracted.value) {
+    hasUserInteracted.value = true
+  }
+
   if (isPlaying.value) {
     pauseMusic()
   } else {
@@ -340,45 +457,48 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 const calculateTimeDifference = () => {
   const now = new Date()
   
-  // Cálculo dos anos
+  // Calcular anos e meses de forma mais precisa
   let yearDiff = now.getFullYear() - referenceDate.getFullYear()
-  
-  // Ajuste para meses
   let monthDiff = now.getMonth() - referenceDate.getMonth()
-  if (monthDiff < 0) {
+  
+  // Ajustar se ainda não chegou no mês/dia de aniversário
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < referenceDate.getDate())) {
     yearDiff--
     monthDiff += 12
   }
   
-  // Ajuste para dias
-  let dayDiff = now.getDate() - referenceDate.getDate()
-  if (dayDiff < 0) {
+  if (now.getDate() < referenceDate.getDate()) {
     monthDiff--
     if (monthDiff < 0) {
       yearDiff--
       monthDiff += 12
     }
-    
-    // Pega o último dia do mês anterior
-    const lastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
-    dayDiff += lastMonth.getDate()
   }
   
-  // Diferença total em milissegundos para calcular horas, minutos e segundos
-  const tempDate = new Date(referenceDate.getFullYear() + yearDiff, referenceDate.getMonth() + monthDiff, referenceDate.getDate() + dayDiff)
-  const timeDiff = now.getTime() - tempDate.getTime()
+  // Calcular data base para os dias restantes (incluindo horas e minutos)
+  const baseDate = new Date(
+    referenceDate.getFullYear() + yearDiff,
+    referenceDate.getMonth() + monthDiff,
+    referenceDate.getDate(),
+    referenceDate.getHours(),
+    referenceDate.getMinutes(),
+    referenceDate.getSeconds()
+  )
   
-  const hourDiff = Math.floor(timeDiff / (1000 * 60 * 60))
-  const minuteDiff = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
-  const secondDiff = Math.floor((timeDiff % (1000 * 60)) / 1000)
+  const remainingDiff = now.getTime() - baseDate.getTime()
+  
+  const remainingDays = Math.floor(remainingDiff / (1000 * 60 * 60 * 24))
+  const remainingHours = Math.floor((remainingDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const remainingMinutes = Math.floor((remainingDiff % (1000 * 60 * 60)) / (1000 * 60))
+  const remainingSeconds = Math.floor((remainingDiff % (1000 * 60)) / 1000)
   
   // Atualiza os valores reativos
   years.value = yearDiff
   months.value = monthDiff
-  days.value = dayDiff
-  hours.value = hourDiff
-  minutes.value = minuteDiff
-  seconds.value = secondDiff
+  days.value = remainingDays
+  hours.value = remainingHours
+  minutes.value = remainingMinutes
+  seconds.value = remainingSeconds
 }
 
 // Inicia o contador quando o componente é montado
@@ -404,10 +524,7 @@ onMounted(() => {
   script.async = true
   document.body.appendChild(script)
 
-  // Adicionar listeners para primeira interação (para contornar auto-play policies)
-  document.addEventListener('click', handleFirstInteraction)
-  document.addEventListener('keydown', handleFirstInteraction)  
-  document.addEventListener('touchstart', handleFirstInteraction)
+
 
   script.onload = () => {
     console.log('🎵 Spotify SDK carregado!')
@@ -424,6 +541,7 @@ onUnmounted(() => {
     clearInterval(intervalId)
   }
   stopAutoPlay()
+  stopPositionUpdate()
   
   // Parar sistema de renovação automática
   if ((window as any).__stopAutoRefresh) {
@@ -435,9 +553,6 @@ onUnmounted(() => {
   if (spotifyPlayer.value) {
     spotifyPlayer.value.disconnect()
   }
-  
-  // Remover listeners de interação
-  removeInteractionListeners()
 })
 </script>
 
@@ -452,29 +567,33 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Player ativo -->
-      <div v-if="isSpotifyConnected">
+      <div v-if="isSpotifyConnected && !currentTrack" class="spotify-status">
+        <div class="connecting">
+          <p>Carregando a música...</p>
+        </div>
+      </div>
+
+      <!-- Player ativo ou interface padrão -->
+      <div v-if="isSpotifyConnected && currentTrack">
         <!-- Informações da música -->
-        <div v-if="currentTrack" class="track-info">
+        <div class="track-info">
           <div class="track-image">
             <img 
-              v-if="currentTrack.album?.images[0]" 
+              v-if="currentTrack?.album?.images[0]" 
               :src="currentTrack.album.images[0].url" 
               :alt="currentTrack.name"
             />
-            <div v-else class="placeholder-image">🎵</div>
           </div>
-          <div style="color: white;">
+          <div class="track-infos">
             <div>
-              <div class="track-name">{{ currentTrack.name }} - {{currentTrack.artists[0]?.name  }}</div>
+              <div class="track-name">
+                <span v-if="currentTrack">{{ currentTrack.name }} - {{ currentTrack.artists[0]?.name }}</span>
+              </div>
             </div>
 
             <div class="playback-info">
-              <span v-if="currentTrack" class="time">
-                {{ formatTime(position) }} / {{ formatTime(duration) }}
-              </span>
-              <span v-else class="status">
-                {{ isSpotifyReady ? 'Pronto para tocar' : 'Carregando...' }}
+              <span class="time">
+                {{ currentTrack ? `${formatTime(position)} / ${formatTime(duration)}` : '0:00 / 0:00' }}
               </span>
             </div>
 
@@ -513,13 +632,6 @@ onUnmounted(() => {
                 <polygon points="8,5 19,12 8,19" fill="currentColor"/>
               </svg>
             </a>
-          </div>
-        </div>
-
-        <!-- Status quando música está carregando -->
-        <div v-if="isSpotifyReady && !currentTrack" class="start-music">
-          <div v-if="isAttemptingAutoPlay" class="loading-music">
-            <p>Iniciando a música automaticamente...</p>
           </div>
         </div>
       </div>
@@ -579,8 +691,8 @@ onUnmounted(() => {
         </div>
       </div>
     </div>    
-    <div>
-      <h1>Eu te amo há:</h1>
+    <h1>Eu te amo há:</h1>
+    <div class="time-contador">
       <h2>{{ years }} anos, {{ months }} meses, {{ days }} dias, {{ hours }} horas, {{ minutes }} minutos e {{ seconds }} segundos</h2>
     </div>
   </div>

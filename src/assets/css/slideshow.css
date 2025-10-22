@@ -2,7 +2,7 @@
 .photo-slideshow {
   width: 100%;
   max-width: 400px;
-  margin: 2rem 0;
+  margin: 1rem 0;
 }
 
 .slideshow-container {
@@ -79,7 +79,7 @@
   padding: 2px 12px;
   border-radius: 12px;
   position: absolute;
-  bottom: 10px;
+  bottom: 5px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -127,30 +127,4 @@
 .autoplay-btn:hover {
   transform: scale(1.1);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-/* Responsividade para slideshow */
-@media (max-width: 768px) {
-  .slideshow-container {
-    height: 400px;
-  }
-  
-  .nav-btn {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .prev-btn {
-    left: 10px;
-  }
-  
-  .next-btn {
-    right: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .slideshow-container {
-    height: 300px;
-  }
 }
