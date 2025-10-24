@@ -694,6 +694,12 @@ onUnmounted(() => {
     <div class="time-contador">
       <h2>{{ years }} anos, {{ months }} meses, {{ days }} dias, {{ hours }} horas, {{ minutes }} minutos e {{ seconds }} segundos</h2>
     </div>
+    <div class="romantic-text">
+      <p>A cada dia que passa, meu coração se enche mais de carinho e admiração por você.</p>
+      <p>Cada sorriso seu ilumina o meu mundo, e cada abraço me faz sentir que estou exatamente onde deveria estar.</p>
+      <p>Você é a razão dos meus melhores pensamentos, e tudo ao seu lado se torna mais bonito e significativo.</p>
+      <p class="love-you-text">Eu te amo ❤️</p>
+    </div>
   </div>
 </template>
 

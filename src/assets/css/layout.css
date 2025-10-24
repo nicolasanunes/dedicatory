@@ -34,9 +34,44 @@ h2 {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+.romantic-text {
+  color: white;
+  font-family: 'Dancing Script';
+  font-size: 2rem;
+  text-align: center;
+  margin-top: 20px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  animation: shine-text 1.5s ease-in-out infinite alternate;
+}
+
+.love-you-text {
+  color: red;
+  animation: shine-love-you 1.5s ease-in-out infinite alternate;
+}
+
 .time-contador h2 {
   font-size: 1.5rem;
-  text-align: center; 
+  text-align: center;
+}
+
+/* Animation */
+
+@keyframes shine-text {
+  from {
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.7), 0 0 7px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  to {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 1), 0 0 10px rgba(255, 255, 255, 0.7), 0 0 14px rgba(255, 255, 255, 0.5);
+  }
+}
+
+@keyframes shine-love-you {
+  from {
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.7), 0 0 10px rgba(255, 0, 0, 0.5), 0 0 20x rgba(255, 0, 0, 0.3);
+  }
+  to {
+    text-shadow: 0 0 10px rgb(255, 0, 0), 0 0 20px rgba(255, 0, 0, 0.7), 0 0 30px rgba(255, 0, 0, 0.5);
+  }
 }
 
 /* Responsividade */
@@ -63,5 +98,10 @@ h2 {
   .time-contador {
     width: 100%;
     padding: 0 10px;
+  }
+
+  .romantic-text {
+    font-size: 1.2rem;
+    margin-top: 15px;
   }
 }
