@@ -47,6 +47,7 @@ h2 {
 .love-you-text {
   color: red;
   animation: shine-love-you 1.5s ease-in-out infinite alternate;
+  font-size: 2.5rem;
 }
 
 .time-contador h2 {
