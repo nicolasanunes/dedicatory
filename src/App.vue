@@ -4,8 +4,16 @@ import { useSpotifyAuth } from './composables/useSpotifyAuth'
 import PasswordProtection from './components/PasswordProtection.vue'
 import './assets/css/index.css'
 
+// Estado de proteção por senha
+const isContentUnlocked = ref(false)
+
 // Data de referência (19/11/2021 às 23:23)
 const referenceDate = new Date('2021-11-19T23:23:00')
+
+// Função para liberar o conteúdo
+const handleUnlocked = () => {
+  isContentUnlocked.value = true
+}
 
 // Estados reativos para cada unidade de tempo
 const years = ref(0)
@@ -559,9 +567,10 @@ onUnmounted(() => {
 
 <template>
   <!-- Componente de proteção por senha -->
-  <PasswordProtection />
+  <PasswordProtection @unlocked="handleUnlocked" />
   
-  <div class="container">
+  <!-- Conteúdo principal - só aparece quando desbloqueado -->
+  <div v-if="isContentUnlocked" class="container">
     <!-- ========== SPOTIFY PLAYER ========== -->
     <div class="spotify-player-section">
       <!-- Status de conexão -->
