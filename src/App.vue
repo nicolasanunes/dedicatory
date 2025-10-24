@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useSpotifyAuth } from './composables/useSpotifyAuth'
+import PasswordProtection from './components/PasswordProtection.vue'
 import './assets/css/index.css'
 
 // Data de referência (19/11/2021 às 23:23)
@@ -557,6 +558,9 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- Componente de proteção por senha -->
+  <PasswordProtection />
+  
   <div class="container">
     <!-- ========== SPOTIFY PLAYER ========== -->
     <div class="spotify-player-section">
