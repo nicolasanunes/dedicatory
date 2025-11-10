@@ -18,7 +18,7 @@
             @input="validatePassword"
           />
           <div v-if="showError" class="error-message">
-            Ei, quem você pensa que é para acessar isto?
+            {{ errorMessage }}
           </div>
         </div>
       </div>
@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import '../assets/css/password-protection.css'
 
 // Definir emits
@@ -39,13 +39,69 @@ const isUnlocked = ref(false)
 const isUnlocking = ref(false)
 const passwordInput = ref('')
 const showError = ref(false)
-const correctPassword = '19112021'
+const passwordSchedule = [
+  {
+    date: new Date('2025-11-19T23:22:00'), // Data e hora específica
+    password: '19112021' // Nova senha a partir dessa data
+  },
+  {
+    date: new Date('2021-11-19T00:00:00'), // Data inicial
+    password: '24445555' // Senha padrão
+  }
+]
+
+// Sistema de mensagens de erro com datas programadas
+const errorMessageSchedule = [
+  {
+    date: new Date('2025-11-19T22:22:00'), // A partir de 19/11/2025
+    message: 'Ei, quem você pensa que é para acessar isto?'
+  },
+  {
+    date: new Date('2021-11-19T00:00:00'), // Até 19/11/2025
+    message: 'Calma lá, ansiosa!'
+  }
+]
+
+// Computed property para determinar a senha correta baseada na data atual
+const correctPassword = computed(() => {
+  const now = new Date()
+  
+  // Ordenar por data decrescente e encontrar a primeira data que já passou
+  const sortedSchedule = [...passwordSchedule].sort((a, b) => b.date.getTime() - a.date.getTime())
+  
+  for (const schedule of sortedSchedule) {
+    if (now >= schedule.date) {
+      console.log(`🔑 Senha ativa: ${schedule.password} (desde ${schedule.date.toLocaleString()})`)
+      return schedule.password
+    }
+  }
+  
+  // Fallback para a senha mais antiga
+  return passwordSchedule[passwordSchedule.length - 1].password
+})
+
+// Computed property para determinar a mensagem de erro baseada na data atual
+const errorMessage = computed(() => {
+  const now = new Date()
+  
+  // Ordenar por data decrescente e encontrar a primeira data que já passou
+  const sortedSchedule = [...errorMessageSchedule].sort((a, b) => b.date.getTime() - a.date.getTime())
+  
+  for (const schedule of sortedSchedule) {
+    if (now >= schedule.date) {
+      return schedule.message
+    }
+  }
+  
+  // Fallback para a mensagem mais antiga
+  return errorMessageSchedule[errorMessageSchedule.length - 1].message
+})
 
 const validatePassword = () => {
   showError.value = false
   
   if (passwordInput.value.length === 8) {
-    if (passwordInput.value === correctPassword) {
+    if (passwordInput.value === correctPassword.value) {
       // Inicia animação de sucesso
       isUnlocking.value = true
       
