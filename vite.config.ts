@@ -6,7 +6,7 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   server: {
-    host: 'localhost',
+    host: '192.168.10.19',
     port: 5173,
     https: process.env.NODE_ENV === 'development' && fs.existsSync(path.resolve(__dirname, 'certs/192.168.10.19.pem')) 
       ? {

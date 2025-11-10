@@ -34,18 +34,38 @@ let slideInterval: NodeJS.Timeout | null = null
 const photos = ref([
   {
     id: 1,
-    src: './src/assets/foto1.jpg',
+    src: 'https://i.ibb.co/d4G629jy/031-E9-BDE-6-F7-A-4648-9-AA9-F64884-A968-A1.jpg',
     alt: 'Foto 1',
   },
   {
     id: 2,
-    src: './src/assets/foto2.jpeg',
+    src: 'https://i.ibb.co/kVxxpm9p/CFAB8-E37-47-AB-4894-9856-85462-FA265-D2.jpg',
     alt: 'Foto 2',
   },
   {
     id: 3,
-    src: './src/assets/foto3.jpg',
+    src: 'https://i.ibb.co/KxvD8wx1/CFCF608-F-E40-B-4205-AB2-A-7-A4-BF17-B4407.jpg',
     alt: 'Foto 3',
+  },
+  {
+    id: 4,
+    src: 'https://i.ibb.co/ZRKm25zH/D582-DCC4-91-C5-44-C5-92-B1-9251658-EBC37.jpg',
+    alt: 'Foto 4',
+  },
+  {
+    id: 5,
+    src: 'https://i.ibb.co/fdvNwB7z/IMG-0261.jpg',
+    alt: 'Foto 5',
+  },
+  {
+    id: 6,
+    src: 'https://i.ibb.co/21SM1YTm/IMG-0808.jpg',
+    alt: 'Foto 6',
+  },
+  {
+    id: 7,
+    src: 'https://i.ibb.co/NdQG873k/IMG-3964.jpg',
+    alt: 'Foto 7',
   },
 ])
 
