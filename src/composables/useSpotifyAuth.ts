@@ -79,6 +79,11 @@ export const useSpotifyAuth = () => {
   const initializeTokens = () => {
     // Tentar carregar tokens salvos primeiro
     if (loadSavedTokens()) {
+      // Verificar se o token salvo ainda é válido
+      if (isTokenExpired.value) {
+        console.log('⚠️ Token salvo expirado, tentando renovar...')
+        refreshAccessToken()
+      }
       return
     }
 
@@ -87,7 +92,7 @@ export const useSpotifyAuth = () => {
       accessToken.value = initialToken
       refreshToken.value = initialRefreshToken || ''
       // Token do .env expira em 1 hora (assumindo que foi gerado recentemente)
-      expiresAt.value = Date.now() + (55 * 60 * 1000) // 55 minutos para ser seguro
+      expiresAt.value = Date.now() + (50 * 60 * 1000) // 50 minutos para ser seguro
       saveTokens()
       console.log('🔑 Tokens inicializados do .env.local')
     }
@@ -183,11 +188,11 @@ export const useSpotifyAuth = () => {
   // Monitoramento automático de expiração
   const startAutoRefresh = () => {
     const checkInterval = setInterval(async () => {
-      // Verificar se token vai expirar nos próximos 5 minutos
-      const fiveMinutesInMs = 5 * 60 * 1000
+      // Verificar se token vai expirar nos próximos 10 minutos (mais margem de segurança)
+      const tenMinutesInMs = 10 * 60 * 1000
       const timeLeft = expiresAt.value - Date.now()
 
-      if (timeLeft <= fiveMinutesInMs && timeLeft > 0 && accessToken.value) {
+      if (timeLeft <= tenMinutesInMs && timeLeft > 0 && accessToken.value && !isRefreshing.value) {
         console.log(`⚠️ Token expira em ${Math.floor(timeLeft / 60000)} minutos. Renovando...`)
         await refreshAccessToken()
       }

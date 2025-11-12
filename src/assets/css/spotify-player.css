@@ -13,6 +13,24 @@
   box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
 }
 
+.spotify-error {
+  background: rgba(255, 68, 68, 0.2);
+  border: 2px solid rgba(255, 68, 68, 0.5);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #ffcccc;
+  font-size: 0.9rem;
+  text-align: center;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
 .connecting {
   display: flex;
   flex-direction: column;

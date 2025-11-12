@@ -141,6 +141,8 @@ const duration = ref(0)
 const volume = ref(0.3)
 const isSafariMobile = ref(false)
 const hasUserInteracted = ref(false)
+const spotifyError = ref<string | null>(null)
+const isPremium = ref(true)
 let positionUpdateInterval: NodeJS.Timeout | null = null
 
 // Track URI da música que você quer tocar (configurável via .env.local)
@@ -193,9 +195,44 @@ const detectSafariMobile = () => {
   return isSafari && isMobile
 }
 
+// Verificar se a conta tem Spotify Premium
+const checkPremiumStatus = async () => {
+  try {
+    const response = await spotifyApiRequest('https://api.spotify.com/v1/me')
+    
+    if (!response.ok) {
+      console.error('❌ Erro ao verificar status da conta:', response.status)
+      return false
+    }
+    
+    const data = await response.json()
+    const premium = data.product === 'premium'
+    
+    if (!premium) {
+      console.error('❌ Spotify Premium necessário para usar o Web Playback SDK')
+      spotifyError.value = 'Spotify Premium é necessário para reproduzir músicas'
+      isPremium.value = false
+    } else {
+      console.log('✅ Conta Premium verificada')
+      isPremium.value = true
+    }
+    
+    return premium
+  } catch (error) {
+    console.error('❌ Erro ao verificar Premium:', error)
+    return false
+  }
+}
+
 // Inicializar Spotify Web Playback SDK
 const initSpotifyPlayer = async () => {
   console.log('🎵 Iniciando Spotify Player...')
+  
+  // Verificar se tem Premium primeiro
+  const hasPremium = await checkPremiumStatus()
+  if (!hasPremium) {
+    return
+  }
   
   // Detectar Safari mobile
   isSafariMobile.value = detectSafariMobile()
@@ -289,19 +326,37 @@ const initSpotifyPlayer = async () => {
   // Error handling
   player.addListener('initialization_error', ({ message }: { message: string }) => {
     console.error('❌ Erro de inicialização:', message)
+    spotifyError.value = `Erro de inicialização: ${message}`
   })
 
-  player.addListener('authentication_error', ({ message }: { message: string }) => {
+  player.addListener('authentication_error', async ({ message }: { message: string }) => {
     console.error('❌ Erro de autenticação:', message)
-    getValidToken().then(token => console.error('🔑 Token disponível:', !!token))
+    spotifyError.value = `Erro de autenticação: ${message}`
+    
+    // Tentar renovar token automaticamente
+    console.log('🔄 Tentando renovar token após erro de autenticação...')
+    const newToken = await getValidToken()
+    
+    if (newToken) {
+      console.log('✅ Token renovado, reconectando player...')
+      // Reconectar player com novo token
+      player.disconnect()
+      setTimeout(() => {
+        initSpotifyPlayer()
+      }, 1000)
+    } else {
+      console.error('❌ Não foi possível renovar token')
+    }
   })
 
   player.addListener('account_error', ({ message }: { message: string }) => {
     console.error('❌ Erro de conta:', message)
+    spotifyError.value = `Erro de conta: ${message}. Verifique se sua conta tem Spotify Premium.`
   })
 
   player.addListener('playback_error', ({ message }: { message: string }) => {
     console.error('❌ Erro de reprodução:', message)
+    spotifyError.value = `Erro de reprodução: ${message}`
   })
 
   // Conectar o player
@@ -593,14 +648,19 @@ onUnmounted(() => {
   <div v-if="isContentUnlocked" class="container">
     <!-- ========== SPOTIFY PLAYER ========== -->
     <div class="spotify-player-section">
+      <!-- Mensagem de erro -->
+      <div v-if="spotifyError" class="spotify-error">
+        <p>⚠️ {{ spotifyError }}</p>
+      </div>
+
       <!-- Status de conexão -->
-      <div v-if="!isSpotifyConnected" class="spotify-status">
+      <div v-if="!isSpotifyConnected && !spotifyError" class="spotify-status">
         <div class="connecting">
           <p>Conectando ao Spotify...</p>
         </div>
       </div>
 
-      <div v-if="isSpotifyConnected && !currentTrack" class="spotify-status">
+      <div v-if="isSpotifyConnected && !currentTrack && !spotifyError" class="spotify-status">
         <div class="connecting">
           <p>Carregando a música...</p>
         </div>
