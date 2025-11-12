@@ -1,1 +1,1 @@
-{"root":["./src/main.ts","./src/vite-env.d.ts","./src/composables/useSpotifyAuth.ts","./src/App.vue"],"version":"5.9.3"}
+{"root":["./src/main.ts","./src/vite-env.d.ts","./src/composables/useSpotifyAuth.ts","./src/App.vue","./src/components/PasswordProtection.vue"],"version":"5.9.3"}

@@ -77,7 +77,7 @@ const correctPassword = computed(() => {
   }
   
   // Fallback para a senha mais antiga
-  return passwordSchedule[passwordSchedule.length - 1].password
+  return passwordSchedule[passwordSchedule.length - 1]?.password || '24445555'
 })
 
 // Computed property para determinar a mensagem de erro baseada na data atual
@@ -94,7 +94,7 @@ const errorMessage = computed(() => {
   }
   
   // Fallback para a mensagem mais antiga
-  return errorMessageSchedule[errorMessageSchedule.length - 1].message
+  return errorMessageSchedule[errorMessageSchedule.length - 1]?.message || 'Senha incorreta'
 })
 
 const validatePassword = () => {
