@@ -76,25 +76,40 @@ export const useSpotifyAuth = () => {
   }
 
   // Inicializar com token do .env se não houver tokens salvos
-  const initializeTokens = () => {
+  const initializeTokens = async () => {
     // Tentar carregar tokens salvos primeiro
     if (loadSavedTokens()) {
       // Verificar se o token salvo ainda é válido
       if (isTokenExpired.value) {
         console.log('⚠️ Token salvo expirado, tentando renovar...')
-        refreshAccessToken()
+        await refreshAccessToken()
+      } else {
+        console.log('✅ Usando token salvo válido')
       }
       return
     }
 
     // Se não houver tokens salvos, usar do .env
-    if (initialToken) {
+    if (initialToken && initialRefreshToken) {
       accessToken.value = initialToken
-      refreshToken.value = initialRefreshToken || ''
-      // Token do .env expira em 1 hora (assumindo que foi gerado recentemente)
-      expiresAt.value = Date.now() + (50 * 60 * 1000) // 50 minutos para ser seguro
-      saveTokens()
-      console.log('🔑 Tokens inicializados do .env.local')
+      refreshToken.value = initialRefreshToken
+      // Token do .env provavelmente está expirado, vamos tentar renovar imediatamente
+      console.log('🔑 Tokens carregados do .env.local, verificando validade...')
+      
+      // Assumir que está expirado e tentar renovar
+      expiresAt.value = Date.now() - 1000 // Forçar como expirado
+      const renewed = await refreshAccessToken()
+      
+      if (renewed) {
+        console.log('✅ Token renovado com sucesso após carregar do .env')
+      } else {
+        console.warn('⚠️ Não foi possível renovar o token. Usando token do .env mesmo assim...')
+        // Tentar usar o token do .env mesmo assim
+        expiresAt.value = Date.now() + (50 * 60 * 1000) // 50 minutos
+        saveTokens()
+      }
+    } else {
+      console.error('❌ Tokens não encontrados nem no localStorage nem no .env.local')
     }
   }
 
@@ -218,9 +233,15 @@ export const useSpotifyAuth = () => {
 
     // Se receber 401, tentar renovar token uma vez
     if (response.status === 401) {
-      console.log('🔄 Recebido 401, tentando renovar token...')
-      const newToken = await getValidToken()
-      if (newToken) {
+      console.log('🔄 Recebido 401, forçando renovação do token...')
+      
+      // Forçar renovação mesmo se o token parecer válido
+      const renewed = await refreshAccessToken()
+      
+      if (renewed) {
+        const newToken = accessToken.value
+        console.log('✅ Token renovado, repetindo requisição...')
+        
         // Repetir requisição com novo token
         return fetch(url, {
           ...options,
@@ -229,6 +250,8 @@ export const useSpotifyAuth = () => {
             'Authorization': `Bearer ${newToken}`
           }
         })
+      } else {
+        console.error('❌ Não foi possível renovar o token após erro 401')
       }
     }
 

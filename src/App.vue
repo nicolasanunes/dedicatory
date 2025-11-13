@@ -122,11 +122,21 @@ const {
   initializeTokens,
   getValidToken,
   startAutoRefresh,
-  spotifyApiRequest
+  spotifyApiRequest,
+  isAuthenticated,
+  getDebugInfo
 } = useSpotifyAuth()
 
-// Inicializar tokens ao carregar
-initializeTokens()
+// Variável para rastrear se tokens foram inicializados
+const tokensInitialized = ref(false)
+
+// Inicializar tokens ao carregar (async)
+const initTokens = async () => {
+  await initializeTokens()
+  tokensInitialized.value = true
+  console.log('✅ Tokens inicializados')
+  console.log('📊 Debug:', getDebugInfo())
+}
 
 // Estados do Spotify Player
 const spotifyPlayer = ref<any>(null)
@@ -198,10 +208,33 @@ const detectSafariMobile = () => {
 // Verificar se a conta tem Spotify Premium
 const checkPremiumStatus = async () => {
   try {
+    // Aguardar tokens estarem prontos
+    if (!tokensInitialized.value) {
+      console.log('⏳ Aguardando inicialização dos tokens...')
+      await initTokens()
+    }
+    
+    // Verificar se está autenticado
+    if (!isAuthenticated.value) {
+      console.error('❌ Não autenticado. Verifique suas credenciais no .env.local')
+      spotifyError.value = 'Credenciais do Spotify não configuradas'
+      return false
+    }
+
+    console.log('🔍 Verificando status Premium...')
     const response = await spotifyApiRequest('https://api.spotify.com/v1/me')
     
     if (!response.ok) {
-      console.error('❌ Erro ao verificar status da conta:', response.status)
+      const errorText = await response.text()
+      console.error('❌ Erro ao verificar status da conta:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      })
+      
+      if (response.status === 401) {
+        spotifyError.value = 'Token inválido. Verifique o refresh token no .env.local'
+      }
       return false
     }
     
@@ -213,13 +246,14 @@ const checkPremiumStatus = async () => {
       spotifyError.value = 'Spotify Premium é necessário para reproduzir músicas'
       isPremium.value = false
     } else {
-      console.log('✅ Conta Premium verificada')
+      console.log('✅ Conta Premium verificada:', data.display_name)
       isPremium.value = true
     }
     
     return premium
   } catch (error) {
     console.error('❌ Erro ao verificar Premium:', error)
+    spotifyError.value = 'Erro ao conectar com Spotify'
     return false
   }
 }
@@ -586,7 +620,7 @@ const calculateTimeDifference = () => {
 }
 
 // Inicia o contador quando o componente é montado
-onMounted(() => {
+onMounted(async () => {
   calculateTimeDifference() // Calcula imediatamente
   intervalId = setInterval(calculateTimeDifference, 1000) // Atualiza a cada segundo
   
@@ -596,6 +630,9 @@ onMounted(() => {
   }
 
   // ========== SISTEMA DE RENOVAÇÃO AUTOMÁTICA ==========
+  // Inicializar tokens ANTES de tudo
+  await initTokens()
+  
   // Iniciar monitoramento automático de renovação
   const stopAutoRefresh = startAutoRefresh()
   
