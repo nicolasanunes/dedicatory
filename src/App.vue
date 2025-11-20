@@ -574,49 +574,55 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 // Função para calcular a diferença de tempo
 const calculateTimeDifference = () => {
   const now = new Date()
+  let tempDate = new Date(referenceDate)
   
-  // Calcular anos e meses de forma mais precisa
-  let yearDiff = now.getFullYear() - referenceDate.getFullYear()
-  let monthDiff = now.getMonth() - referenceDate.getMonth()
-  
-  // Ajustar se ainda não chegou no mês/dia de aniversário
-  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < referenceDate.getDate())) {
-    yearDiff--
-    monthDiff += 12
-  }
-  
-  if (now.getDate() < referenceDate.getDate()) {
-    monthDiff--
-    if (monthDiff < 0) {
-      yearDiff--
-      monthDiff += 12
+  // Anos
+  let yearsDiff = 0
+  while (tempDate.getFullYear() < now.getFullYear() || 
+         (tempDate.getFullYear() === now.getFullYear() && 
+          (tempDate.getMonth() < now.getMonth() || 
+           (tempDate.getMonth() === now.getMonth() && 
+            tempDate.getDate() <= now.getDate() &&
+            tempDate.getTime() <= now.getTime())))) {
+    const nextYear = new Date(tempDate)
+    nextYear.setFullYear(nextYear.getFullYear() + 1)
+    if (nextYear.getTime() <= now.getTime()) {
+      yearsDiff++
+      tempDate = nextYear
+    } else {
+      break
     }
   }
   
-  // Calcular data base para os dias restantes (incluindo horas e minutos)
-  const baseDate = new Date(
-    referenceDate.getFullYear() + yearDiff,
-    referenceDate.getMonth() + monthDiff,
-    referenceDate.getDate(),
-    referenceDate.getHours(),
-    referenceDate.getMinutes(),
-    referenceDate.getSeconds()
-  )
+  // Meses
+  let monthsDiff = 0
+  while (tempDate.getMonth() < now.getMonth() || 
+         (tempDate.getMonth() === now.getMonth() && tempDate.getDate() <= now.getDate() && tempDate.getTime() <= now.getTime()) ||
+         (tempDate.getMonth() > now.getMonth() && tempDate.getFullYear() < now.getFullYear())) {
+    const nextMonth = new Date(tempDate)
+    nextMonth.setMonth(nextMonth.getMonth() + 1)
+    if (nextMonth.getTime() <= now.getTime()) {
+      monthsDiff++
+      tempDate = nextMonth
+    } else {
+      break
+    }
+  }
   
-  const remainingDiff = now.getTime() - baseDate.getTime()
-  
-  const remainingDays = Math.floor(remainingDiff / (1000 * 60 * 60 * 24))
-  const remainingHours = Math.floor((remainingDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const remainingMinutes = Math.floor((remainingDiff % (1000 * 60 * 60)) / (1000 * 60))
-  const remainingSeconds = Math.floor((remainingDiff % (1000 * 60)) / 1000)
+  // Dias, horas, minutos, segundos
+  const remainingMs = now.getTime() - tempDate.getTime()
+  const daysDiff = Math.floor(remainingMs / (1000 * 60 * 60 * 24))
+  const hoursDiff = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutesDiff = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60))
+  const secondsDiff = Math.floor((remainingMs % (1000 * 60)) / 1000)
   
   // Atualiza os valores reativos
-  years.value = yearDiff
-  months.value = monthDiff
-  days.value = remainingDays
-  hours.value = remainingHours
-  minutes.value = remainingMinutes
-  seconds.value = remainingSeconds
+  years.value = yearsDiff
+  months.value = monthsDiff
+  days.value = daysDiff
+  hours.value = hoursDiff
+  minutes.value = minutesDiff
+  seconds.value = secondsDiff
 }
 
 // Inicia o contador quando o componente é montado
